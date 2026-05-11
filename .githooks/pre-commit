@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+npm run format
+npm run check
+
+if ! git diff --quiet; then
+  echo "Formatting changed files. Review and stage the updates, then commit again." >&2
+  exit 1
+fi
+

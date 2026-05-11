@@ -1,0 +1,30 @@
+{
+  "name": "nvimview",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "format": "npm run format:web && npm run format:py",
+    "format:web": "prettier --write \"**/*.{md,json,html,css,js,mjs,cjs}\" \"!extension/vendor/**\"",
+    "format:py": "ruff format native_host tests scripts",
+    "check": "npm run check:web && npm run check:md && npm run check:py && npm run lint:extension && npm test",
+    "check:web": "prettier --check \"**/*.{md,json,html,css,js,mjs,cjs}\" \"!extension/vendor/**\"",
+    "check:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#.venv\"",
+    "check:py": "ruff format --check native_host tests scripts && ruff check native_host tests scripts",
+    "test": "npm run test:js && npm run test:py",
+    "test:js": "node --test \"tests/js/*.test.mjs\"",
+    "test:py": "python3 -m pytest native_host/tests -q",
+    "lint:extension": "web-ext lint --source-dir extension --self-hosted",
+    "package:extension": "web-ext build --source-dir extension --artifacts-dir web-ext-artifacts --overwrite-dest",
+    "vendor:xterm": "node scripts/vendor_xterm_assets.js"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "0.22.1",
+    "prettier": "3.8.3",
+    "web-ext": "^10.1.0"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0"
+  }
+}
