@@ -198,11 +198,18 @@ def test_session_script_installs_event_driven_dirty_and_theme_hooks(
     assert "NvimViewDirty=" in script
     assert "NvimViewTheme=" in script
     assert "NvimViewSessionReady=1" in script
+    assert "let g:nvimview = 1" in script
+    assert "let g:nvimview_session = 1" in script
     assert "function! NvimViewFocusTargetFile() abort" in script
     assert "function! NvimViewNotifyReady() abort" in script
     assert "function! s:CanonicalPath(path) abort" in script
+    assert "function! s:PatchContextVim() abort" in script
+    assert "g:nvimview_disable_context_vim_patch" in script
+    assert "require, 'context.highlight'" in script
+    assert "mod._nvimview_sync_patch = true" in script
     assert "fnamemodify(resolve(a:path), ':p')" in script
     assert "autocmd VimEnter,ColorScheme * call <SID>SyncTerminalCursor()" in script
+    assert "autocmd VimEnter,ColorScheme * call <SID>PatchContextVim()" in script
     assert "]12;" in script
     assert "set mouse=" in script
     assert (tmp_path / "dirty").read_text() == "0\n"
