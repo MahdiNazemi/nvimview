@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "NvimView",
+  "description": "Open eligible source-like files in a full-tab local Neovim UI.",
+  "version": "0.0.1",
+  "browser_specific_settings": {
+    "gecko": {
+      "data_collection_permissions": {
+        "required": ["none"]
+      },
+      "id": "nvimview@nazemi.dev",
+      "strict_min_version": "142.0"
+    }
+  },
+  "permissions": [
+    "clipboardWrite",
+    "nativeMessaging",
+    "storage",
+    "tabs",
+    "webRequest",
+    "webRequestBlocking"
+  ],
+  "host_permissions": ["file:///*", "http://*/*", "https://*/*"],
+  "background": {
+    "scripts": [
+      "shared/browser-polyfill.js",
+      "shared/defaults.js",
+      "shared/filetypes.js",
+      "shared/url-rules.js",
+      "options/settings-schema.js",
+      "background/activation.js",
+      "background/background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["file:///*", "http://*/*", "https://*/*"],
+      "js": ["shared/browser-polyfill.js", "content/content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "NvimView options"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'self'; base-uri 'self';"
+  }
+}

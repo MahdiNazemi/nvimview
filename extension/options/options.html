@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NvimView Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>NvimView</h1>
+        <p>Configure when files open in Neovim and how the viewer starts.</p>
+      </header>
+
+      <section>
+        <h2>General</h2>
+        <label class="check-row">
+          <input id="enabled" type="checkbox" />
+          <span>Automatically open eligible top-level file pages</span>
+        </label>
+      </section>
+
+      <section>
+        <h2>File Types</h2>
+        <div class="toolbar">
+          <button id="select-all" type="button">Select all</button>
+          <button id="select-none" type="button">Select none</button>
+        </div>
+        <div id="filetype-list" class="check-list"></div>
+        <label>
+          Custom file types
+          <textarea id="custom-filetypes" rows="13" spellcheck="false"></textarea>
+        </label>
+        <label class="sample-label">
+          Copyable custom file type sample
+          <textarea
+            id="custom-filetypes-sample"
+            class="copy-sample"
+            rows="10"
+            readonly
+            spellcheck="false"
+          ></textarea>
+        </label>
+        <p class="hint">
+          JSON array. Each item needs <code>id</code>, <code>label</code>,
+          <code>nvimFiletype</code>, and at least one matcher: <code>extensions</code>,
+          <code>mimeTypes</code>, <code>filenames</code>, or <code>shebangs</code>.
+        </p>
+      </section>
+
+      <section>
+        <h2>URL Rules</h2>
+        <div class="grid">
+          <label>
+            Deny hosts or URL fragments
+            <textarea id="deny-rules" rows="5"></textarea>
+          </label>
+          <label>
+            Allow hosts or URL fragments
+            <textarea id="allow-rules" rows="5"></textarea>
+          </label>
+        </div>
+        <p class="hint">
+          One rule per line. Use <code>*.example.com</code> for host wildcards and
+          <code>url:fragment</code> for URL substring rules.
+        </p>
+      </section>
+
+      <section>
+        <h2>Neovim</h2>
+        <div class="grid">
+          <label>
+            Executable path
+            <input id="nvim-executable" type="text" placeholder="Auto-detect nvim" />
+          </label>
+          <label>
+            Startup command
+            <input
+              id="startup-command"
+              type="text"
+              placeholder="call mn#dir#toggle_left_explorer()"
+            />
+          </label>
+        </div>
+        <label class="sample-label">
+          Copyable startup command sample
+          <input
+            id="startup-command-sample"
+            class="copy-sample"
+            type="text"
+            readonly
+            value="call mn#dir#toggle_left_explorer()"
+          />
+        </label>
+        <label class="check-row">
+          <input id="startup-command-enabled" type="checkbox" />
+          <span>Run startup command after opening the file</span>
+        </label>
+        <p class="hint">
+          Runs after Neovim opens the file. The extension does not manage panes created
+          by this command; Neovim mappings and resize handlers own that behavior.
+        </p>
+      </section>
+
+      <section>
+        <h2>Viewer</h2>
+        <div class="grid">
+          <label>
+            Font family
+            <input id="font-family" type="text" />
+          </label>
+          <label>
+            Font size
+            <input id="font-size" type="number" min="8" max="40" />
+          </label>
+          <label class="check-row">
+            <input id="cursor-blink" type="checkbox" />
+            <span>Blink cursor</span>
+          </label>
+          <label>
+            Mouse behavior
+            <select id="viewer-mouse-mode">
+              <option value="selection">Browser selection</option>
+              <option value="neovim">Neovim mouse</option>
+            </select>
+          </label>
+          <label>
+            Renderer
+            <select id="viewer-renderer">
+              <option value="webgl">WebGL</option>
+              <option value="builtin">Built-in</option>
+            </select>
+          </label>
+          <label>
+            Viewer zoom percent
+            <input id="viewer-zoom" type="number" min="30" max="500" />
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Project Root</h2>
+        <label>
+          Root markers
+          <textarea id="project-root-markers" rows="4" spellcheck="false"></textarea>
+        </label>
+        <p class="hint">
+          NvimView starts Neovim in the selected root so startup commands and local
+          config can open their own panes. Markers use one line each:
+          <code>highest .git</code>, <code>highest AGENTS.md</code>,
+          <code>highest CLAUDE.md</code>, or <code>nearest package.json</code>.
+        </p>
+      </section>
+
+      <section>
+        <h2>Import And Export</h2>
+        <textarea id="settings-json" rows="10" spellcheck="false"></textarea>
+        <div class="toolbar">
+          <button id="export-settings" type="button">Export</button>
+          <button id="import-settings" type="button">Import</button>
+          <button id="restore-defaults" type="button">Restore defaults</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Diagnostics</h2>
+        <dl class="diagnostics">
+          <div>
+            <dt>Native host</dt>
+            <dd><code>nvimview</code></dd>
+          </div>
+          <div>
+            <dt>Extension ID</dt>
+            <dd><code>nvimview@nazemi.dev</code></dd>
+          </div>
+          <div>
+            <dt>File URL access</dt>
+            <dd id="file-url-access">Checking...</dd>
+          </div>
+        </dl>
+        <div class="toolbar">
+          <button id="check-native-host" type="button">Check native host</button>
+        </div>
+        <pre id="diagnostics-output" aria-live="polite"></pre>
+      </section>
+
+      <footer>
+        <button id="save" type="button">Save</button>
+        <span id="status" role="status"></span>
+      </footer>
+    </main>
+
+    <script src="../shared/browser-polyfill.js"></script>
+    <script src="../shared/defaults.js"></script>
+    <script src="../shared/zoom.js"></script>
+    <script src="settings-schema.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
