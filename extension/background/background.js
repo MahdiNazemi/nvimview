@@ -45,6 +45,10 @@
     }
   }
 
+  function utf8Bytes(text) {
+    return new TextEncoder().encode(text || "");
+  }
+
   function suggestedName(url, contentDisposition) {
     const headerName =
       globalThis.NvimView.filenameFromContentDisposition(contentDisposition);
@@ -57,6 +61,33 @@
 
   function oversizedSnapshotError() {
     return new Error("HTTP snapshot is larger than the configured limit.");
+  }
+
+  function snapshotTooLargeResult(error = oversizedSnapshotError()) {
+    return {
+      eligible: false,
+      message: error.message,
+      reason: "snapshot-too-large",
+    };
+  }
+
+  function snapshotFromLoadedText({
+    contentDisposition = "",
+    mimeType = "",
+    text = "",
+    url,
+  }) {
+    const bytes = utf8Bytes(text);
+    if (bytes.byteLength > MAX_HTTP_SNAPSHOT_BYTES) {
+      throw oversizedSnapshotError();
+    }
+    return {
+      contentDisposition,
+      mimeType,
+      sample: text.slice(0, SAMPLE_BYTES),
+      snapshotBase64: bytesToBase64(bytes),
+      suggestedName: suggestedName(url, contentDisposition),
+    };
   }
 
   async function readResponseBytes(response, abortFetch) {
@@ -221,7 +252,12 @@
     );
   }
 
-  async function activationFromMetadata({ metadata, settings, url }) {
+  async function activationFromMetadata({
+    loadedSnapshot = null,
+    metadata,
+    settings,
+    url,
+  }) {
     const initial = globalThis.NvimView.evaluateActivation({
       ...metadata,
       settings,
@@ -234,16 +270,20 @@
     let snapshot = null;
     let activation = initial;
     if (isHttpUrl(url) && initial.eligible) {
-      try {
-        snapshot = await fetchSnapshot(url);
-      } catch (error) {
-        if (isAbortError(error)) {
-          return {
-            activation: { eligible: false, reason: "snapshot-timeout" },
-            snapshot: null,
-          };
+      if (loadedSnapshot) {
+        snapshot = loadedSnapshot;
+      } else {
+        try {
+          snapshot = await fetchSnapshot(url);
+        } catch (error) {
+          if (isAbortError(error)) {
+            return {
+              activation: { eligible: false, reason: "snapshot-timeout" },
+              snapshot: null,
+            };
+          }
+          throw error;
         }
-        throw error;
       }
       activation = globalThis.NvimView.evaluateActivation({
         ...snapshot,
@@ -295,7 +335,24 @@
       mimeType: message.mimeType || "",
       sample: message.sample || "",
     };
+    if (message.pageTextOversized) {
+      return snapshotTooLargeResult();
+    }
+    let loadedSnapshot = null;
+    if (isHttpUrl(message.url) && typeof message.pageText === "string") {
+      try {
+        loadedSnapshot = snapshotFromLoadedText({
+          contentDisposition: metadata.contentDisposition,
+          mimeType: metadata.mimeType,
+          text: message.pageText,
+          url: message.url,
+        });
+      } catch (error) {
+        return snapshotTooLargeResult(error);
+      }
+    }
     const { activation, snapshot } = await activationFromMetadata({
+      loadedSnapshot,
       metadata,
       settings,
       url: message.url,
@@ -345,5 +402,6 @@
     maybeRedirectFromHeaders,
     metadataFromHeaders,
     purgeExpiredSessions,
+    snapshotFromLoadedText,
   };
 })();

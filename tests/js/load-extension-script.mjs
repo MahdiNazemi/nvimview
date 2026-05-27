@@ -10,6 +10,7 @@ export function loadExtensionScripts(paths, extras = {}) {
       randomUUID: () => "00000000-0000-4000-8000-000000000000",
     },
     TextDecoder,
+    TextEncoder,
     clearTimeout,
     setTimeout,
     Uint8Array,

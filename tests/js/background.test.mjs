@@ -148,6 +148,58 @@ describe("background activation", () => {
     );
   });
 
+  it("uses content-script text for HTTP snapshots without refetching", async () => {
+    let fetches = 0;
+    const { listeners } = loadBackground(async () => {
+      fetches += 1;
+      throw new Error("private raw pages should not be refetched");
+    });
+    const pageText = "# README\n\nprivate content\n";
+
+    const result = await listeners.message(
+      {
+        type: "nvimview.maybeOpen",
+        mimeType: "text/plain; charset=utf-8",
+        pageText,
+        sample: pageText,
+        url: "https://gitlab-master.example.test/user/project/-/raw/main/README.md",
+      },
+      { tab: { id: 7 } },
+    );
+
+    assert.equal(result.eligible, true);
+    assert.equal(fetches, 0);
+    assert.equal(listeners.storedSession.fileUrl, "");
+    assert.equal(listeners.storedSession.sourceKind, "snapshot");
+    assert.equal(listeners.storedSession.readOnly, true);
+    assert.equal(listeners.storedSession.nvimFiletype, "markdown");
+    assert.equal(listeners.storedSession.suggestedName, "README.md");
+    assert.equal(
+      Buffer.from(listeners.storedSession.snapshotBase64, "base64").toString("utf8"),
+      pageText,
+    );
+  });
+
+  it("rejects oversized content-script snapshots without opening a session", async () => {
+    const { listeners, nvimview } = loadBackground();
+
+    const result = await listeners.message(
+      {
+        type: "nvimview.maybeOpen",
+        mimeType: "text/plain",
+        pageText: "x".repeat(nvimview.MAX_HTTP_SNAPSHOT_BYTES + 1),
+        sample: "x".repeat(128),
+        url: "https://example.test/large.md",
+      },
+      { tab: { id: 7 } },
+    );
+
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, "snapshot-too-large");
+    assert.equal(listeners.storedSession, undefined);
+    assert.equal(listeners.updatedTab, undefined);
+  });
+
   it("does not register file URLs for header redirects", () => {
     const { listeners } = loadBackground();
 

@@ -1,4 +1,5 @@
 (function () {
+  const MAX_HTTP_SNAPSHOT_BYTES = 512 * 1024;
   const SAMPLE_CHARS = 64 * 1024;
 
   function isTopFrame() {
@@ -17,16 +18,35 @@
     return children.length === 1 && children[0].tagName === "PRE";
   }
 
+  function rawText() {
+    const children = [...(document.body?.children || [])];
+    if (children.length === 1 && children[0].tagName === "PRE") {
+      return children[0].textContent || "";
+    }
+    return document.body?.textContent || "";
+  }
+
+  function loadedSnapshotPayload(text) {
+    if (location.protocol !== "http:" && location.protocol !== "https:") {
+      return {};
+    }
+    if (new TextEncoder().encode(text).byteLength > MAX_HTTP_SNAPSHOT_BYTES) {
+      return { pageTextOversized: true };
+    }
+    return { pageText: text };
+  }
+
   async function maybeOpen() {
     if (!isTopFrame() || !isRawLikeDocument()) {
       return;
     }
-    const sample = (document.body?.innerText || "").slice(0, SAMPLE_CHARS);
+    const text = rawText();
     await browser.runtime.sendMessage({
       type: "nvimview.maybeOpen",
       mimeType: document.contentType || "",
-      sample,
+      sample: text.slice(0, SAMPLE_CHARS),
       url: location.href,
+      ...loadedSnapshotPayload(text),
     });
   }
 
